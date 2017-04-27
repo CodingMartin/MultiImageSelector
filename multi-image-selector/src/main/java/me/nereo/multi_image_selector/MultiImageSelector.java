@@ -25,10 +25,11 @@ public class MultiImageSelector {
     private int mMode = MultiImageSelectorActivity.MODE_MULTI;
     private ArrayList<String> mOriginData;
     private static MultiImageSelector sSelector;
-
+    private Context context;
+    private String fileProviderName;
     @Deprecated
     private MultiImageSelector(Context context){
-
+        this.context=context;
     }
 
     private MultiImageSelector(){}
@@ -73,7 +74,13 @@ public class MultiImageSelector {
         return sSelector;
     }
 
-    public void start(Activity activity, int requestCode){
+    public MultiImageSelector fileProviderName(String fileProviderName){
+        this.fileProviderName=fileProviderName;
+        return sSelector;
+
+    }
+
+  public void start(Activity activity, int requestCode){
         final Context context = activity;
         if(hasPermission(context)) {
             activity.startActivityForResult(createIntent(context), requestCode);
@@ -106,6 +113,9 @@ public class MultiImageSelector {
         intent.putExtra(MultiImageSelectorActivity.EXTRA_SELECT_COUNT, mMaxCount);
         if(mOriginData != null){
             intent.putStringArrayListExtra(MultiImageSelectorActivity.EXTRA_DEFAULT_SELECTED_LIST, mOriginData);
+        }
+        if(fileProviderName!=null){
+            intent.putExtra(MultiImageSelectorActivity.FILE_PROVIDER_NAME,fileProviderName);
         }
         intent.putExtra(MultiImageSelectorActivity.EXTRA_SELECT_MODE, mMode);
         return intent;

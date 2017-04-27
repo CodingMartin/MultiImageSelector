@@ -40,13 +40,17 @@ public class MultiImageSelectorActivity extends AppCompatActivity
     public static final String EXTRA_RESULT = "select_result";
     /** Original data set */
     public static final String EXTRA_DEFAULT_SELECTED_LIST = "default_list";
+    /**
+     * android 7.0 FileProvider
+     */
+    public static final String FILE_PROVIDER_NAME= "file_provider_name";
     // Default image size
     private static final int DEFAULT_IMAGE_SIZE = 9;
 
     private ArrayList<String> resultList = new ArrayList<>();
     private Button mSubmitButton;
     private int mDefaultCount = DEFAULT_IMAGE_SIZE;
-
+    private String fileProviderName;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,7 +78,9 @@ public class MultiImageSelectorActivity extends AppCompatActivity
         if(mode == MODE_MULTI && intent.hasExtra(EXTRA_DEFAULT_SELECTED_LIST)) {
             resultList = intent.getStringArrayListExtra(EXTRA_DEFAULT_SELECTED_LIST);
         }
-
+        if(intent.hasExtra(FILE_PROVIDER_NAME)){
+            fileProviderName=intent.getStringExtra(FILE_PROVIDER_NAME);
+        }
         mSubmitButton = (Button) findViewById(R.id.commit);
         if(mode == MODE_MULTI){
             updateDoneText(resultList);
@@ -102,6 +108,7 @@ public class MultiImageSelectorActivity extends AppCompatActivity
             bundle.putInt(MultiImageSelectorFragment.EXTRA_SELECT_COUNT, mDefaultCount);
             bundle.putInt(MultiImageSelectorFragment.EXTRA_SELECT_MODE, mode);
             bundle.putBoolean(MultiImageSelectorFragment.EXTRA_SHOW_CAMERA, isShow);
+            bundle.putString(MultiImageSelectorFragment.FILE_PROVIDER_NAME,fileProviderName);
             bundle.putStringArrayList(MultiImageSelectorFragment.EXTRA_DEFAULT_SELECTED_LIST, resultList);
 
             getSupportFragmentManager().beginTransaction()

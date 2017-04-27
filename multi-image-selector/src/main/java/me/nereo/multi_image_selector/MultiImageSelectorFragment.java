@@ -12,17 +12,21 @@ import android.graphics.Color;
 import android.graphics.Point;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.CursorLoader;
+import android.support.v4.content.FileProvider;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.ListPopupWindow;
 import android.text.TextUtils;
 import android.view.LayoutInflater;
@@ -75,7 +79,10 @@ public class MultiImageSelectorFragment extends Fragment {
     public static final String EXTRA_SHOW_CAMERA = "show_camera";
     /** Original data set */
     public static final String EXTRA_DEFAULT_SELECTED_LIST = "default_list";
-
+    /**
+     * android 7.0 FileProvider
+     */
+    public static final String FILE_PROVIDER_NAME= "file_provider_name";
     // loaders
     private static final int LOADER_ALL = 0;
     private static final int LOADER_CATEGORY = 1;
@@ -99,7 +106,7 @@ public class MultiImageSelectorFragment extends Fragment {
     private boolean hasFolderGened = false;
 
     private File mTmpFile;
-
+    private Uri contentUri;
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
@@ -303,12 +310,13 @@ public class MultiImageSelectorFragment extends Fragment {
      * Open camera
      */
     private void showCameraAction() {
-        if(ContextCompat.checkSelfPermission(getContext(), Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED){
-            requestPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE,
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN // Permission was added in API Level 16
+                && ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            requestPermission(Manifest.permission.READ_EXTERNAL_STORAGE,
                     getString(R.string.mis_permission_rationale_write_storage),
                     REQUEST_STORAGE_WRITE_ACCESS_PERMISSION);
-        }else {
+        } else{
             Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
             if (intent.resolveActivity(getActivity().getPackageManager()) != null) {
                 try {
@@ -317,8 +325,33 @@ public class MultiImageSelectorFragment extends Fragment {
                     e.printStackTrace();
                 }
                 if (mTmpFile != null && mTmpFile.exists()) {
-                    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(mTmpFile));
-                    startActivityForResult(intent, REQUEST_CAMERA);
+//                    intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(mTmpFile));
+//                    startActivityForResult(intent, REQUEST_CAMERA);
+
+                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.M){
+                        contentUri = Uri.fromFile(mTmpFile);
+                        intent.putExtra(MediaStore.EXTRA_OUTPUT, contentUri);
+                        startActivityForResult(intent, REQUEST_CAMERA);
+                    }else{
+                        /**
+                         * 7.0 调用系统相机拍照不再允许使用Uri方式，应该替换为FileProvider
+                         * 并且这样可以解决MIUI系统上拍照返回size为0的情况
+                         */
+                        if(fileProviderName()==null){
+                            Toast.makeText(getActivity(), R.string.mis_error_image_not_file_provider, Toast.LENGTH_SHORT).show();
+                            return;
+                        }else{
+                            contentUri = FileProvider.getUriForFile(getActivity(),fileProviderName(), mTmpFile);
+                            intent.putExtra(MediaStore.EXTRA_OUTPUT, contentUri);
+                            startActivityForResult(intent, REQUEST_CAMERA);
+                        }
+                    }
+
+
+
+
+
+
                 } else {
                     Toast.makeText(getActivity(), R.string.mis_error_image_not_exist, Toast.LENGTH_SHORT).show();
                 }
@@ -329,7 +362,7 @@ public class MultiImageSelectorFragment extends Fragment {
     }
 
     private void requestPermission(final String permission, String rationale, final int requestCode){
-        if(shouldShowRequestPermissionRationale(permission)){
+        if(ActivityCompat.shouldShowRequestPermissionRationale(getActivity(),permission)){
             new AlertDialog.Builder(getContext())
                     .setTitle(R.string.mis_permission_dialog_title)
                     .setMessage(rationale)
@@ -501,6 +534,11 @@ public class MultiImageSelectorFragment extends Fragment {
     private int selectImageCount(){
         return getArguments() == null ? 9 : getArguments().getInt(EXTRA_SELECT_COUNT);
     }
+    @Nullable
+    private String fileProviderName(){
+        return getArguments() == null ? null : getArguments().getString(FILE_PROVIDER_NAME);
+    }
+
 
     /**
      * Callback for host activity
