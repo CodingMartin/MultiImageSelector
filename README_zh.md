@@ -23,7 +23,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.github.lovetuzitong:MultiImageSelector:1.2'
+     compile 'com.github.jiangm93:MultiImageSelector:1.3'
 }
 ```
 
@@ -60,7 +60,8 @@ MultiImageSelector.create(Context)
         .count(int) // 最大选择图片数量, 默认为9. 只有在选择模式为多选时有效
         .single() // 单选模式
         .multi() // 多选模式, 默认模式;
-        .origin(ArrayList<String>) // 默认已选择图片. 只有在选择模式为多选时有效
+	.fileProviderName(fileProviderName);//Android 7.0文件提供者fileProviderName
+        .origin(ArrayList<String>) // 默认已选择图片. 只有在选择模式为多选时有效
         .start(Activity/Fragment, REQUEST_IMAGE);
 ```
 
@@ -141,7 +142,10 @@ class CustomerActivity extends Activity implements MultiImageSelectorFragment.Ca
 -------------------
 
 ###更新日志
+* 2017-4-28
+    1. 新增. Android 7.0相机拍照 支持
 
+    
 * 2016-5-18
     1. 新增. `JitPack` 支持
     2. 新增. 简单的调用方式. 详细参见 `第2步`
